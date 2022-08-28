@@ -29,7 +29,6 @@ const CreateRoomPage = () => {
       }),
     };
     let data = await (await fetch("/api/create-room", requestOptions)).json();
-    console.log(data);
     navigate("/room/" + data.code);
   }
 
