@@ -3,12 +3,16 @@ import React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import { useMatch, useNavigate } from "react-router-dom";
+import CreateRoomPage from "./CreateRoomPage";
 
 export function Room() {
   const match = useMatch("/room/:roomCode");
   const [votesToSkip, setVotesToSkip] = useState(2);
   const [guestCanPause, setGuestCanPauseChange] = useState(false);
   const [isHost, setIsHost] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [updatePage, setUpdatePage] = useState(false);
+  const [spotifyAuthenticated, setSpotifyAuthenticate] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,8 +27,24 @@ export function Room() {
         setVotesToSkip(data.votes_to_skip);
         setGuestCanPauseChange(data.guest_can_pause);
         setIsHost(data.is_host);
+        if (data.is_host) authenticateSpotify();
       });
-  }, []);
+  }, [updatePage]);
+
+  function authenticateSpotify() {
+    fetch("/spotify/is-authenticated")
+      .then((response) => response.json())
+      .then((data) => {
+        setSpotifyAuthenticate(data.status);
+        if (!data.status) {
+          fetch("/spotify/get-auth-url")
+            .then((response) => response.json())
+            .then((data) => {
+              window.location.replace(data.url);
+            });
+        }
+      });
+  }
 
   function leaveButtonPressed() {
     const requestOptions = {
@@ -36,39 +56,83 @@ export function Room() {
     });
   }
 
-  return match ? (
-    <Grid container spacing={1}>
-      <Grid item xs={12} align="center">
-        <Typography variant="h4" component="h4">
-          Code: {match.params.roomCode}
-        </Typography>
-      </Grid>
-      <Grid item xs={12} align="center">
-        <Typography variant="h6" component="h6">
-          Votes: {votesToSkip}
-        </Typography>
-      </Grid>
-      <Grid item xs={12} align="center">
-        <Typography variant="h6" component="h6">
-          Guest Can Pause: {guestCanPause.toString()}
-        </Typography>
-      </Grid>
-      <Grid item xs={12} align="center">
-        <Typography variant="h6" component="h6">
-          Host: {isHost.toString()}
-        </Typography>
-      </Grid>
+  function renderSettingsButton() {
+    return (
       <Grid item xs={12} align="center">
         <Button
           variant="contained"
-          color="secondary"
-          onClick={leaveButtonPressed}
+          color="primary"
+          onClick={() => setShowSettings(true)}
         >
-          Leave Room
+          Settings
         </Button>
       </Grid>
-    </Grid>
-  ) : (
-    <div>Uncool</div>
+    );
+  }
+
+  function renderSettings() {
+    return (
+      <Grid container spacing={1}>
+        <Grid item xs={12} align="center">
+          <CreateRoomPage
+            update
+            votesToSkip={votesToSkip}
+            guestCanPause={guestCanPause}
+            roomCode={match.params.roomCode}
+            updateCallBack={() => setUpdatePage(!updatePage)}
+          />
+        </Grid>
+        <Grid item xs={12} align="center">
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => setShowSettings(false)}
+          >
+            Close
+          </Button>
+        </Grid>
+      </Grid>
+    );
+  }
+
+  return (
+    <>
+      {!showSettings ? (
+        <Grid container spacing={1}>
+          <Grid item xs={12} align="center">
+            <Typography variant="h4" component="h4">
+              Code: {match.params.roomCode}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} align="center">
+            <Typography variant="h6" component="h6">
+              Votes: {votesToSkip}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} align="center">
+            <Typography variant="h6" component="h6">
+              Guest Can Pause: {guestCanPause.toString()}
+            </Typography>
+          </Grid>
+          <Grid item xs={12} align="center">
+            <Typography variant="h6" component="h6">
+              Host: {isHost.toString()}
+            </Typography>
+          </Grid>
+          {isHost && renderSettingsButton()}
+          <Grid item xs={12} align="center">
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={leaveButtonPressed}
+            >
+              Leave Room
+            </Button>
+          </Grid>
+        </Grid>
+      ) : (
+        renderSettings()
+      )}
+    </>
   );
 }

@@ -1,3 +1,4 @@
 /music_controller/frontend/node_modules
+/music_controller/spotify/credentials.py
 secrets.json
 .venv
