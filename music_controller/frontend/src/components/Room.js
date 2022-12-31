@@ -4,17 +4,19 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { useMatch, useNavigate } from "react-router-dom";
 import CreateRoomPage from "./CreateRoomPage";
+import MusicPlayer from "./MusicPlayer";
 
 export function Room() {
   const match = useMatch("/room/:roomCode");
   const [votesToSkip, setVotesToSkip] = useState(2);
+  const [song, setSong] = useState(false);
   const [guestCanPause, setGuestCanPauseChange] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [updatePage, setUpdatePage] = useState(false);
   const [spotifyAuthenticated, setSpotifyAuthenticate] = useState(false);
   const navigate = useNavigate();
-
+  getCurrentSong();
   useEffect(() => {
     fetch("/api/get-room" + "?code=" + match.params.roomCode)
       .then((response) => {
@@ -30,6 +32,20 @@ export function Room() {
         if (data.is_host) authenticateSpotify();
       });
   }, [updatePage]);
+
+  function getCurrentSong() {
+    fetch("/spotify/current-song")
+      .then((response) => {
+        if (response.statusText !== "OK") {
+          return {};
+        } else {
+          return response.json();
+        }
+      })
+      .then((data) => {
+        setSong(data);
+      });
+  }
 
   function authenticateSpotify() {
     fetch("/spotify/is-authenticated")
@@ -94,7 +110,6 @@ export function Room() {
       </Grid>
     );
   }
-
   return (
     <>
       {!showSettings ? (
@@ -104,21 +119,7 @@ export function Room() {
               Code: {match.params.roomCode}
             </Typography>
           </Grid>
-          <Grid item xs={12} align="center">
-            <Typography variant="h6" component="h6">
-              Votes: {votesToSkip}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} align="center">
-            <Typography variant="h6" component="h6">
-              Guest Can Pause: {guestCanPause.toString()}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} align="center">
-            <Typography variant="h6" component="h6">
-              Host: {isHost.toString()}
-            </Typography>
-          </Grid>
+          {song && <MusicPlayer song={{ ...song }}></MusicPlayer>}
           {isHost && renderSettingsButton()}
           <Grid item xs={12} align="center">
             <Button

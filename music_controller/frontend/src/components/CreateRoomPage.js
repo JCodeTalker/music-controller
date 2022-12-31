@@ -32,6 +32,7 @@ const CreateRoomPage = (props) => {
       }),
     };
     let data = await (await fetch("/api/create-room", requestOptions)).json();
+    console.log(data);
     navigate("/room/" + data.code);
   }
 
@@ -99,7 +100,7 @@ const CreateRoomPage = (props) => {
             onClose={() => setUpdateResult({ msg: "", type: "" })}
           >
             {updateResult.msg}
-          </Alert>{" "}
+          </Alert>
         </Collapse>
       </Grid>
       <Grid item xs={12} align="center">
